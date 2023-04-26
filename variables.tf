@@ -15,11 +15,6 @@ variable "rds_name_prefix" {
   type        = string
 }
 
-variable "target_value" {
-  description = "Autoscaling target value in number (represents when will happen autoscaling)"
-  type        = number
-}
-
 variable "web_name_prefix" {
   description = "Name to be used on every web layer related resource."
   type        = string
@@ -45,4 +40,9 @@ variable "image_id" {
   type        = string
   description = "Image to use for the ec2 instances that will run nginx."
   default     = "ami-0c55b159cbfafe1f0"
+}
+
+variable "my_ip_address" {
+  type        = string
+  description = "My current ip address to be used to communicate with the ELB (restricted access to just only my IP)"
 }

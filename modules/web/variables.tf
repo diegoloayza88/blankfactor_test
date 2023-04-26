@@ -9,11 +9,6 @@ variable "image_id" {
   type        = string
 }
 
-variable "target_value" {
-  description = "Target value in second to trigger auto-scaling"
-  type        = number
-}
-
 variable "web_name_prefix" {
   description = "Nginx WEB name prefix to use for all related resources"
   type        = string
@@ -27,6 +22,11 @@ variable "vpc_id" {
 variable "subnet_ids" {
   description = "IDs of the private subnets to be used by RDS"
   type        = list(string)
+}
+
+variable "my_ip_address" {
+  type        = string
+  description = "My current ip address to be used to communicate with the ELB (restricted access to just only my IP)"
 }
 
 variable "region" {

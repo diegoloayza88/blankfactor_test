@@ -24,3 +24,46 @@ are part of it
 The consuming stack is within blankfactor_test folder, and basically
 it's calling the respective modules and variables to be able to deploy the
 aws services and resources.
+
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | 1.2.9 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~>3.75 |
+
+## Providers
+
+No providers.
+
+## Modules
+
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_networking"></a> [networking](#module\_networking) | ./modules/networking | n/a |
+| <a name="module_rds_db"></a> [rds\_db](#module\_rds\_db) | ./modules/rds | n/a |
+| <a name="module_web_layer"></a> [web\_layer](#module\_web\_layer) | ./modules/web | n/a |
+
+## Resources
+
+No resources.
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_azs"></a> [azs](#input\_azs) | A list of availability zones names or ids in the region | `list(string)` | `[]` | no |
+| <a name="input_cidr"></a> [cidr](#input\_cidr) | The CIDR block for the VPC. Default value is a valid CIDR, but not acceptable by AWS and should be overridden | `string` | `""` | no |
+| <a name="input_db_name"></a> [db\_name](#input\_db\_name) | RDS database name | `string` | n/a | yes |
+| <a name="input_image_id"></a> [image\_id](#input\_image\_id) | Image to use for the ec2 instances that will run nginx. | `string` | `"ami-0c55b159cbfafe1f0"` | no |
+| <a name="input_my_ip_address"></a> [my\_ip\_address](#input\_my\_ip\_address) | My current ip address to be used to communicate with the ELB (restricted access to just only my IP) | `string` | n/a | yes |
+| <a name="input_rds_name_prefix"></a> [rds\_name\_prefix](#input\_rds\_name\_prefix) | RDS name prefix to use for all related resources | `string` | n/a | yes |
+| <a name="input_region"></a> [region](#input\_region) | AWS region to deploy the resources | `string` | `"us-east-1"` | no |
+| <a name="input_username"></a> [username](#input\_username) | RDS username | `string` | n/a | yes |
+| <a name="input_web_name_prefix"></a> [web\_name\_prefix](#input\_web\_name\_prefix) | Name to be used on every web layer related resource. | `string` | n/a | yes |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_rds_endpoint"></a> [rds\_endpoint](#output\_rds\_endpoint) | The RDS postgres endpoint |

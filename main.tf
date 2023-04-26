@@ -17,9 +17,9 @@ module "web_layer" {
   source          = "./modules/web"
   image_id        = var.image_id
   subnet_ids      = module.networking.vpc.public_subnets.ids
-  target_value    = var.target_value
   vpc_id          = module.networking.vpc.id
   web_name_prefix = var.web_name_prefix
+  my_ip_address   = var.my_ip_address
 
   depends_on = [module.networking]
 }

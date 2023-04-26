@@ -5,7 +5,6 @@ data "aws_secretsmanager_secret_version" "rds_password" {
   secret_id = "interview27-rds-password"
 }
 
-
 resource "aws_db_instance" "test_bf_instance" {
   instance_class         = var.instance_class
   identifier             = "${var.rds_name_prefix}-rds"
@@ -19,7 +18,7 @@ resource "aws_db_instance" "test_bf_instance" {
   skip_final_snapshot    = true
   db_subnet_group_name   = aws_db_subnet_group.test_bf_subnet_group.id
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
-
+  storage_encrypted      = true
 
   tags = merge(
     { "Name" = "${upper(var.rds_name_prefix)}-${upper(var.region)}" },

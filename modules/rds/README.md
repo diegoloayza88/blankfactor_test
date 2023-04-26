@@ -3,14 +3,13 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.2.9 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 3.72.0, < 5 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~>3.75 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 3.72.0, < 5 |
-| <a name="provider_random"></a> [random](#provider\_random) | n/a |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~>3.75 |
 
 ## Modules
 
@@ -23,7 +22,7 @@ No modules.
 | [aws_db_instance.test_bf_instance](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance) | resource |
 | [aws_db_subnet_group.test_bf_subnet_group](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_subnet_group) | resource |
 | [aws_security_group.rds_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
-| [random_password.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [aws_secretsmanager_secret_version.rds_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/secretsmanager_secret_version) | data source |
 
 ## Inputs
 
@@ -50,4 +49,3 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_rds_endpoint"></a> [rds\_endpoint](#output\_rds\_endpoint) | The RDS postgres endpoint |
-| <a name="output_rds_user"></a> [rds\_user](#output\_rds\_user) | The master user credentials |

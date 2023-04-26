@@ -2,6 +2,10 @@
 # Launch Template
 ################################################################################
 
+data "local_file" "user_data" {
+  filename = "${path.module}/user_data.sh"
+}
+
 resource "aws_launch_template" "test_bf_launch_template" {
   name                   = "${var.web_name_prefix}-nginx-launch-template"
   instance_type          = var.instance_type
@@ -30,7 +34,7 @@ resource "aws_launch_template" "test_bf_launch_template" {
     name = aws_iam_instance_profile.test_bf_instance_profile.name
   }
 
-  user_data = filebase64("modules/web/files/user_data.sh")
+  user_data = base64encode(data.local_file.user_data.content)
 
   tags = merge(
     { "Name" = "${upper(var.web_name_prefix)}-${upper(var.region)}" },
@@ -53,13 +57,6 @@ resource "aws_security_group" "test_bf_asg_sg" {
     security_groups = [aws_security_group.test_bf_alb_sg.id]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = merge(
     { "Name" = "${upper(var.web_name_prefix)}-${upper(var.region)}" },
     var.tags
@@ -70,8 +67,19 @@ resource "aws_security_group" "test_bf_asg_sg" {
 # IAM role and policy for instance profile
 ################################################################################
 resource "aws_iam_role" "test_bf_instance_profile_role" {
-  assume_role_policy = file("modules/web/files/role_trust_policy.json")
-  name               = "${var.web_name_prefix}-instance-profile-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+  name = "${var.web_name_prefix}-instance-profile-role"
 
   tags = merge(
     { "Name" = "${upper(var.web_name_prefix)}-${upper(var.region)}" },
@@ -90,15 +98,61 @@ resource "aws_iam_instance_profile" "test_bf_instance_profile" {
 }
 
 resource "aws_iam_policy" "test_bf_instance_profile_policy" {
-  policy = file("modules/web/files/instance_policy.json")
-  name   = "${var.web_name_prefix}-instance-profile-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:DescribeAssociation",
+          "ssm:DescribeDocument",
+          "ssm:GetManifest",
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetDeployablePatchSnapshotForInstance",
+          "ssm:GetDocument",
+          "ssm:ListAssociations",
+          "ssm:ListInstanceAssociations",
+          "ssm:PutInventory",
+          "ssm:PutComplianceItems",
+          "ssm:PutConfigurePackageResult",
+          "ssm:UpdateAssociationStatus",
+          "ssm:UpdateInstanceAssociationStatus",
+          "ssm:UpdateInstanceInformation"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2messages:AcknowledgeMessage",
+          "ec2messages:DeleteMessage",
+          "ec2messages:FailMessage",
+          "ec2messages:GetEndpoint",
+          "ec2messages:GetMessages",
+          "ec2messages:SendReply"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+  name = "${var.web_name_prefix}-instance-profile-policy"
 
   tags = merge(
     { "Name" = "${upper(var.web_name_prefix)}-${upper(var.region)}" },
     var.tags
   )
 }
-
 
 resource "aws_iam_role_policy_attachment" "test_bf_instance_profile_policy_attachment" {
   role       = aws_iam_role.test_bf_instance_profile_role.name
@@ -124,23 +178,64 @@ resource "aws_autoscaling_group" "test_bf_asg" {
   termination_policies      = ["OldestInstance", "Default"]
 }
 
-resource "aws_autoscaling_policy" "test_bf_asg_policy" {
-  autoscaling_group_name    = aws_autoscaling_group.test_bf_asg.name
-  name                      = "${var.web_name_prefix}-asg-policy"
-  policy_type               = "TargetTrackingScaling"
-  estimated_instance_warmup = 60
+resource "aws_autoscaling_policy" "test_bf_asg_scale_up" {
+  autoscaling_group_name = aws_autoscaling_group.test_bf_asg.name
+  name                   = "${var.web_name_prefix}-asg-scale-up-policy"
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = 1
+  cooldown               = 180
+}
 
-  target_tracking_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ASGAverageCPUUtilization"
-    }
-    target_value = var.target_value
+resource "aws_autoscaling_policy" "test_bf_asg_scale_down" {
+  autoscaling_group_name = aws_autoscaling_group.test_bf_asg.name
+  name                   = "${var.web_name_prefix}-asg-scale-down-policy"
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = -1
+  cooldown               = 180
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_up" {
+  alarm_description   = "Monitors CPU utilization Greater Than or Equal to 65% for Test Blankfactor ASG"
+  alarm_actions       = [aws_autoscaling_policy.test_bf_asg_scale_up.arn]
+  alarm_name          = "test_bf_asg_scale_up"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  namespace           = "AWS/EC2"
+  metric_name         = "CPUUtilization"
+  threshold           = "65"
+  evaluation_periods  = "2"
+  period              = "120"
+  statistic           = "Average"
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.test_bf_asg.name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_down" {
+  alarm_description   = "Monitors CPU utilization Less Than or Equal to 40% for Test Blankfactor ASG"
+  alarm_actions       = [aws_autoscaling_policy.test_bf_asg_scale_down.arn]
+  alarm_name          = "test_bf_asg_scale_down"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  namespace           = "AWS/EC2"
+  metric_name         = "CPUUtilization"
+  threshold           = "40"
+  evaluation_periods  = "2"
+  period              = "120"
+  statistic           = "Average"
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.test_bf_asg.name
   }
 }
 
 ################################################################################
 # Application load balancer for ASG and related resources
 ################################################################################
+
+data "aws_acm_certificate" "interview27_certificate" {
+  domain   = "interview27-bf-test.com"
+  statuses = ["ISSUED"]
+}
 
 resource "aws_lb" "test_bf_alb" {
   name               = "${var.web_name_prefix}-alb"
@@ -156,10 +251,10 @@ resource "aws_lb" "test_bf_alb" {
 }
 
 resource "aws_lb_target_group" "test_bf_tg" {
-  name        = "${var.web_name_prefix}-lb-tg"
-  vpc_id      = var.vpc_id
-  protocol    = "HTTP"
-  port        = 80
+  name     = "${var.web_name_prefix}-lb-tg"
+  vpc_id   = var.vpc_id
+  protocol = "HTTP"
+  port     = 80
 
   tags = merge(
     { "Name" = "${upper(var.web_name_prefix)}-${upper(var.region)}" },
@@ -175,16 +270,14 @@ resource "aws_security_group" "test_bf_alb_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.my_ip_address] #My current IP address
   }
 
-  # To avoid the creation of a certificate to enable HTTPS because of time and
-  # testing purposes, this is just for visibility of best practices
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.my_ip_address] #My current IP address
   }
 
   egress {
@@ -200,10 +293,33 @@ resource "aws_security_group" "test_bf_alb_sg" {
   )
 }
 
-resource "aws_alb_listener" "test_bf_alb_listener" {
+resource "aws_alb_listener" "test_bf_alb_listener_http" {
   load_balancer_arn = aws_lb.test_bf_alb.arn
   protocol          = "HTTP"
   port              = 80
+
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  tags = merge(
+    { "Name" = "${upper(var.web_name_prefix)}-${upper(var.region)}" },
+    var.tags
+  )
+}
+
+resource "aws_alb_listener" "https" {
+  load_balancer_arn = aws_lb.test_bf_alb.arn
+  protocol          = "HTTPS"
+  port              = 443
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = data.aws_acm_certificate.interview27_certificate.arn
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.test_bf_tg.arn
