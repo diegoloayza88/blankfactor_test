@@ -198,7 +198,7 @@ resource "aws_cloudwatch_metric_alarm" "scale_up" {
   alarm_description   = "Monitors CPU utilization Greater Than or Equal to 65% for Test Blankfactor ASG"
   alarm_actions       = [aws_autoscaling_policy.test_bf_asg_scale_up.arn]
   alarm_name          = "test_bf_asg_scale_up"
-  comparison_operator = "LessThanOrEqualToThreshold"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
   namespace           = "AWS/EC2"
   metric_name         = "CPUUtilization"
   threshold           = "65"
