@@ -15,7 +15,7 @@ resource "aws_launch_template" "test_bf_launch_template" {
   network_interfaces {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.test_bf_asg_sg.id]
-    subnet_id                   = var.subnet_ids[0]
+    subnet_id                   = var.private_subnet_ids[0]
   }
 
   metadata_options {
@@ -170,7 +170,7 @@ resource "aws_autoscaling_group" "test_bf_asg" {
     version = "$Latest"
   }
   target_group_arns         = [aws_lb_target_group.test_bf_tg.arn]
-  vpc_zone_identifier       = var.subnet_ids
+  vpc_zone_identifier       = var.private_subnet_ids
   health_check_type         = "ELB"
   health_check_grace_period = 300
   max_size                  = 3
@@ -242,7 +242,7 @@ resource "aws_lb" "test_bf_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.test_bf_alb_sg.id]
-  subnets            = var.subnet_ids
+  subnets            = var.public_subnet_ids
 
   tags = merge(
     { "Name" = "${upper(var.web_name_prefix)}-${upper(var.region)}" },

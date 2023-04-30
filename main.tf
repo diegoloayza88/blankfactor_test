@@ -14,12 +14,13 @@ module "networking" {
 ################################################################################
 
 module "web_layer" {
-  source          = "./modules/web"
-  image_id        = var.image_id
-  subnet_ids      = module.networking.vpc.public_subnets.ids
-  vpc_id          = module.networking.vpc.id
-  web_name_prefix = var.web_name_prefix
-  my_ip_address   = var.my_ip_address
+  source             = "./modules/web"
+  image_id           = var.image_id
+  private_subnet_ids = module.networking.vpc.private_subnets.ids
+  public_subnet_ids  = module.networking.vpc.public_subnets.ids
+  vpc_id             = module.networking.vpc.id
+  web_name_prefix    = var.web_name_prefix
+  my_ip_address      = var.my_ip_address
 
   depends_on = [module.networking]
 }

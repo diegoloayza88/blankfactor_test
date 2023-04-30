@@ -19,8 +19,13 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "subnet_ids" {
-  description = "IDs of the private subnets to be used by RDS"
+variable "private_subnet_ids" {
+  description = "IDs of the private subnets to be used by RDS and EC2 instances."
+  type        = list(string)
+}
+
+variable "public_subnet_ids" {
+  description = "IDs of the public subnets to be used by the Load Balancer"
   type        = list(string)
 }
 
