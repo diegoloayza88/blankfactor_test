@@ -25,6 +25,15 @@ The consuming stack is within blankfactor_test folder, and basically
 it's calling the respective modules and variables to be able to deploy the
 aws services and resources.
 
+---
+
+To access the simple NGINX web service through internet we just need to
+go to https://interview27-bf-test.com/
+
+* NOTE.-
+Take into account that based on the test requirements this will only be possible
+from my current IP address.
+
 ## Requirements
 
 | Name | Version |
