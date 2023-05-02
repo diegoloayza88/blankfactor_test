@@ -13,7 +13,7 @@ resource "aws_launch_template" "test_bf_launch_template" {
   image_id               = var.image_id
 
   network_interfaces {
-    associate_public_ip_address = true
+    associate_public_ip_address = false
     security_groups             = [aws_security_group.test_bf_asg_sg.id]
     subnet_id                   = var.private_subnet_ids[0]
   }

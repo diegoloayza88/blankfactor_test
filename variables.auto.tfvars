@@ -5,7 +5,7 @@ cidr = "10.0.0.0/16"
 ## WEB layer related variables
 web_name_prefix = "nginx-interview27"
 image_id        = "ami-06e46074ae430fba6"
-my_ip_address   = "200.111.90.42/32"
+my_ip_address   = "38.25.18.177/32"
 
 # RDS related variables
 db_name         = "interview27"
